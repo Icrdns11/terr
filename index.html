@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sorteo Aleatorio en Calendario Mensual</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Variables CSS para colores Material Design */
+        :root {
+            --md-primary: #1976D2; /* Azul oscuro */
+            --md-primary-light: #2196F3; /* Azul estándar */
+            --md-primary-dark: #1565C0; /* Azul más oscuro */
+            --md-accent: #FF5722; /* Naranja acentuado */
+            --md-text: #212121; /* Texto principal oscuro */
+            --md-text-light: #757575; /* Texto secundario */
+            --md-background: #F5F5F5; /* Fondo claro */
+            --md-surface: #FFFFFF; /* Superficie de elementos */
+            --md-shadow: rgba(0, 0, 0, 0.2); /* Sombra suave */
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--md-background);
+            color: var(--md-text);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: var(--md-surface);
+            padding: 30px;
+            border-radius: 8px; /* Bordes ligeramente redondeados */
+            box-shadow: 0 4px 10px var(--md-shadow); /* Sombra más pronunciada */
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--md-primary-dark);
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        p {
+            margin-bottom: 25px;
+            font-size: 1em; /* Ajustado ligeramente */
+            color: var(--md-text-light);
+        }
+
+        .controls {
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .controls label {
+            font-weight: 500;
+            color: var(--md-text);
+        }
+
+        .controls select {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1em;
+            flex-grow: 1;
+            min-width: 120px;
+            background-color: var(--md-surface);
+            color: var(--md-text);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+            appearance: none; /* Eliminar estilo nativo del select */
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20d%3D%22M5.293%207.293a1%201%200%20011.414%200L10%2010.586l3.293-3.293a1%201%200%20111.414%201.414l-4%204a1%201%200%2001-1.414%200l-4-4a1%201%200%20010-1.414z%22%20fill%3D%22%23757575%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 1em;
+        }
+
+        .controls button {
+            background-color: var(--md-primary-light);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, box-shadow 0.2s ease;
+            flex-grow: 1;
+            min-width: 150px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* Sombra para botón */
+        }
+
+        .controls button:hover {
+            background-color: var(--md-primary-dark);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .controls button:active {
+            background-color: var(--md-primary);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        #uncheckAllBtn {
+            background-color: var(--md-accent); /* Color acentuado para desmarcar */
+        }
+
+        #uncheckAllBtn:hover {
+            background-color: #E64A19; /* Tono más oscuro del acento */
+        }
+        #uncheckAllBtn:active {
+            background-color: #D84315;
+        }
+
+
+        .number-selection {
+            background-color: var(--md-surface);
+            border: 1px solid #e0e0e0; /* Borde más suave */
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: left;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Sombra para la sección */
+        }
+
+        .number-selection h3 {
+            margin-top: 0;
+            color: var(--md-primary-dark);
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 10px;
+            justify-content: center;
+        }
+
+        /* Estilo para los números (antes labels con checkbox) */
+        .number-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 50px; /* Tamaño fijo para el círculo/cuadrado */
+            height: 50px;
+            border-radius: 50%; /* Forma de círculo por defecto */
+            background-color: #ECEFF1; /* Gris claro, sin seleccionar */
+            color: var(--md-text-light);
+            font-weight: 500;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+            user-select: none; /* Evitar selección de texto */
+        }
+
+        /* Estilo para número seleccionado */
+        .number-item.selected {
+            background-color: var(--md-primary-light);
+            color: white;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+            transform: translateY(-2px); /* Ligero efecto de "levantar" */
+        }
+
+        .number-item:hover {
+            background-color: #CFD8DC; /* Gris un poco más oscuro en hover */
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+        }
+        .number-item.selected:hover {
+             background-color: var(--md-primary-dark);
+             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Estilo para número deshabilitado */
+        .number-item.disabled {
+            background-color: #E0E0E0;
+            color: #BDBDBD;
+            cursor: not-allowed;
+            opacity: 0.7;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .calendar-container {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            background-color: var(--md-surface);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-header {
+            font-size: 1.4em;
+            font-weight: 500;
+            margin-bottom: 15px;
+            color: var(--md-primary-dark);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            text-align: center;
+        }
+
+        .day-name, .day-cell {
+            padding: 10px 5px;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            word-wrap: break-word;
+        }
+
+        .day-name {
+            background-color: #E0E0E0; /* Gris más Material */
+            font-weight: 500;
+            color: var(--md-text);
+            font-size: 0.9em;
+        }
+
+        .day-cell {
+            background-color: #FAFAFA; /* Gris muy claro */
+            border: 1px solid #E0E0E0; /* Borde más suave */
+            min-height: 70px;
+            position: relative;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05); /* Sombra interior */
+        }
+
+        .day-cell.current-month {
+            background-color: var(--md-surface);
+        }
+
+        .day-number {
+            font-weight: 500;
+            font-size: 1em;
+            color: var(--md-primary);
+            margin-bottom: 5px;
+        }
+
+        .random-number {
+            font-size: 1.2em;
+            font-weight: 700; /* Más bold para destacar */
+            color: #388E3C; /* Verde más oscuro */
+            background-color: #E8F5E9; /* Verde claro de fondo */
+            border-radius: 4px;
+            padding: 2px 6px; /* Más padding */
+            margin-top: 5px;
+            display: inline-block;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .empty-cell {
+            background-color: #EEEEEE; /* Gris más sólido */
+            color: #BDBDBD; /* Texto gris claro */
+        }
+
+        .monday {
+            background-color: #FFEBEE; /* Rojo muy claro */
+            color: #D32F2F; /* Rojo más oscuro */
+            border-color: #FFCDD2; /* Borde más suave */
+        }
+
+        /* --- Media Queries para hacer el diseño responsive --- */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.6em;
+            }
+
+            p {
+                font-size: 0.95em;
+            }
+
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .controls select,
+            .controls button {
+                width: 100%;
+                max-width: 300px;
+            }
+
+            .number-selection {
+                padding: 15px;
+            }
+
+            .number-grid {
+                grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); /* Más pequeños */
+                gap: 8px;
+            }
+
+            .number-item {
+                width: 40px; /* Reducir tamaño de los círculos */
+                height: 40px;
+                font-size: 1em;
+            }
+            .number-item.selected {
+                transform: none; /* Eliminar efecto de "levantar" en móviles */
+            }
+
+            .calendar-container {
+                max-width: 100%;
+                min-width: unset;
+                padding: 10px;
+            }
+
+            .calendar-header {
+                font-size: 1.2em;
+                margin-bottom: 10px;
+            }
+
+            .day-name, .day-cell {
+                padding: 8px 3px;
+                min-height: 55px; /* Ajusta la altura de las celdas */
+            }
+
+            .day-number {
+                font-size: 0.85em;
+            }
+
+            .random-number {
+                font-size: 0.95em;
+                padding: 1px 3px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.4em;
+            }
+
+            p {
+                font-size: 0.85em;
+            }
+
+            .day-name {
+                font-size: 0.75em;
+            }
+
+            .day-number {
+                font-size: 0.75em;
+            }
+
+            .random-number {
+                font-size: 0.85em;
+            }
+
+            .number-grid {
+                grid-template-columns: repeat(auto-fill, minmax(35px, 1fr)); /* Aún más pequeños */
+                gap: 5px;
+            }
+            .number-item {
+                width: 35px; /* Reducir tamaño de los círculos */
+                height: 35px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Territorio</h1>
+         <div class="controls">
+            <label for="startMonth">Mes</label>
+            <select id="startMonth">
+                </select>
+            <label for="startYear">Año:</label>
+            <select id="startYear">
+                </select>
+            <button id="generateBtn">Iniciar</button>
+            <button id="uncheckAllBtn">Desmarcar</button>
+        </div>
+
+        <div class="number-selection">
+            <h3>Territorios (<span id="selectedCount">0</span>/35)</h3>
+            <div class="number-grid" id="numberGrid">
+                </div>
+        </div>
+
+        <div id="calendarContainer" class="calendar-container">
+            <div class="calendar-header" id="calendarHeader"></div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+    </div>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const startMonthSelect = document.getElementById('startMonth');
+            const startYearSelect = document.getElementById('startYear');
+            const generateBtn = document.getElementById('generateBtn');
+            const uncheckAllBtn = document.getElementById('uncheckAllBtn');
+            const numberGrid = document.getElementById('numberGrid');
+            const selectedCountSpan = document.getElementById('selectedCount');
+
+            const calendarGrid = document.getElementById('calendarGrid');
+            const calendarHeader = document.getElementById('calendarHeader');
+
+            const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+            const monthNames = [
+                'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            ];
+
+            // Almacenar el estado de selección de los números
+            const selectedNumbersState = new Set(); // Usamos un Set para un acceso rápido
+
+            // Rellenar selectores de mes y año
+            function populateMonthAndYearSelects() {
+                const currentYear = new Date().getFullYear();
+                
+                monthNames.forEach((name, index) => {
+                    const option = document.createElement('option');
+                    option.value = index;
+                    option.textContent = name;
+                    startMonthSelect.appendChild(option);
+                });
+
+                startMonthSelect.value = new Date().getMonth();
+
+                for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+                    const option = document.createElement('option');
+                    option.value = i;
+                    option.textContent = i;
+                    startYearSelect.appendChild(option);
+                }
+                startYearSelect.value = currentYear;
+            }
+
+            // Función para generar los elementos de números del 1 al 35 (ya no checkboxes visibles)
+            function populateNumberSelection() {
+                numberGrid.innerHTML = '';
+                for (let i = 1; i <= 35; i++) {
+                    const numberItem = document.createElement('div'); // Ahora es un div
+                    numberItem.classList.add('number-item');
+                    numberItem.textContent = i;
+                    numberItem.dataset.value = i; // Guardar el valor en un data attribute
+                    
+                    // Inicialmente todos seleccionados
+                    selectedNumbersState.add(i);
+                    numberItem.classList.add('selected');
+
+                    numberItem.addEventListener('click', toggleNumberSelection);
+                    numberGrid.appendChild(numberItem);
+                }
+                updateSelectedCount();
+                applyNumberItemState(); // Asegura que el estado visual se aplique correctamente
+            }
+
+            // Función para alternar la selección de un número
+            function toggleNumberSelection(event) {
+                const numberItem = event.target;
+                const numberValue = parseInt(numberItem.dataset.value);
+
+                if (selectedNumbersState.has(numberValue)) {
+                    // Si ya está seleccionado, deseleccionarlo
+                    selectedNumbersState.delete(numberValue);
+                } else {
+                    // Si no está seleccionado, seleccionarlo (con límite)
+                    if (selectedNumbersState.size < 35) {
+                        selectedNumbersState.add(numberValue);
+                    } else {
+                        alert('Solo puedes seleccionar un máximo de 35 números.');
+                    }
+                }
+                updateSelectedCount();
+                applyNumberItemState(); // Actualizar el estilo visual
+            }
+
+            // Actualizar el contador de números seleccionados y el estado visual
+            function updateSelectedCount() {
+                selectedCountSpan.textContent = selectedNumbersState.size;
+            }
+
+            // Aplica las clases 'selected' y 'disabled' a los number-items
+            function applyNumberItemState() {
+                numberGrid.querySelectorAll('.number-item').forEach(item => {
+                    const numberValue = parseInt(item.dataset.value);
+                    if (selectedNumbersState.has(numberValue)) {
+                        item.classList.add('selected');
+                    } else {
+                        item.classList.remove('selected');
+                    }
+
+                    // Deshabilitar visualmente si ya hay 35 seleccionados y este no lo está
+                    if (selectedNumbersState.size >= 35 && !selectedNumbersState.has(numberValue)) {
+                        item.classList.add('disabled');
+                    } else {
+                        item.classList.remove('disabled');
+                    }
+                });
+            }
+
+
+            // Función para desmarcar todas las casillas (ahora deseleccionar visualmente)
+            function uncheckAllNumbers() {
+                selectedNumbersState.clear();
+                updateSelectedCount();
+                applyNumberItemState(); // Actualizar el estilo visual
+            }
+
+            // Función para obtener la clave de fecha en formato YYYY-MM-DD
+            function getDateKey(date) {
+                return date.toISOString().slice(0, 10);
+            }
+
+            // Función principal para renderizar el calendario
+            function renderCalendar() {
+                const selectedNumbersArray = Array.from(selectedNumbersState); // Convertir Set a Array
+                let selectedNumbers = selectedNumbersArray.sort(() => Math.random() - 0.5); // Barajar
+
+                if (selectedNumbers.length === 0) {
+                    alert('Por favor, selecciona al menos un número para el sorteo.');
+                    return;
+                }
+
+                const selectedMonth = parseInt(startMonthSelect.value);
+                const selectedYear = parseInt(startYearSelect.value);
+
+                let currentLotteryDate = new Date(selectedYear, selectedMonth, 1);
+                currentLotteryDate.setHours(0, 0, 0, 0);
+
+                const numbersByDate = new Map();
+
+                for (let i = 0; i < selectedNumbers.length; i++) {
+                    // Asegurarse de que el día actual no sea lunes (1)
+                    while (currentLotteryDate.getDay() === 1) { // 1 es Lunes
+                        currentLotteryDate.setDate(currentLotteryDate.getDate() + 1);
+                    }
+                    
+                    const dateKey = getDateKey(currentLotteryDate);
+                    
+                    // Solo asigna el número si la fecha está dentro del mes seleccionado
+                    if (currentLotteryDate.getMonth() === selectedMonth && currentLotteryDate.getFullYear() === selectedYear) {
+                         numbersByDate.set(dateKey, selectedNumbers[i]);
+                    } else {
+                        // Si el número se salió del mes, detenemos la asignación.
+                        break; 
+                    }
+                   
+                    currentLotteryDate.setDate(currentLotteryDate.getDate() + 1);
+                }
+
+                // Renderizar el único calendario
+                renderSingleCalendar(calendarGrid, calendarHeader, selectedYear, selectedMonth, numbersByDate);
+            }
+
+            // Función auxiliar para renderizar un solo mes de calendario
+            function renderSingleCalendar(gridElement, headerElement, year, month, numbersByDate) {
+                gridElement.innerHTML = '';
+                headerElement.textContent = `${monthNames[month]} ${year}`;
+
+                dayNames.forEach(name => {
+                    const dayNameCell = document.createElement('div');
+                    dayNameCell.classList.add('day-name');
+                    dayNameCell.textContent = name;
+                    gridElement.appendChild(dayNameCell);
+                });
+
+                const firstDayOfMonth = new Date(year, month, 1);
+                firstDayOfMonth.setHours(0, 0, 0, 0);
+                const lastDayOfMonth = new Date(year, month + 1, 0);
+                lastDayOfMonth.setHours(0, 0, 0, 0);
+
+                let firstDayIndex = firstDayOfMonth.getDay();
+                if (firstDayIndex === 0) { // Si es Domingo (0), queremos que su índice visual sea 6 (al final de la fila)
+                    firstDayIndex = 6;
+                } else { // Para Lunes (1) a Sábado (6), restamos 1 para que Lunes sea 0
+                    firstDayIndex = firstDayIndex - 1;
+                }
+
+                for (let i = 0; i < firstDayIndex; i++) {
+                    const emptyCell = document.createElement('div');
+                    emptyCell.classList.add('day-cell', 'empty-cell');
+                    gridElement.appendChild(emptyCell);
+                }
+
+                for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
+                    const currentDay = new Date(year, month, day);
+                    currentDay.setHours(0, 0, 0, 0);
+                    const dayOfWeek = currentDay.getDay();
+
+                    const dayCell = document.createElement('div');
+                    dayCell.classList.add('day-cell', 'current-month');
+
+                    const dayNumberSpan = document.createElement('span');
+                    dayNumberSpan.classList.add('day-number');
+                    dayNumberSpan.textContent = day;
+                    dayCell.appendChild(dayNumberSpan);
+
+                    if (dayOfWeek === 1) { // 1 es Lunes
+                        dayCell.classList.add('monday');
+                    }
+
+                    const dateKey = getDateKey(currentDay);
+                    if (numbersByDate.has(dateKey)) {
+                        const randomNumberSpan = document.createElement('span');
+                        randomNumberSpan.classList.add('random-number');
+                        randomNumberSpan.textContent = numbersByDate.get(dateKey);
+                        dayCell.appendChild(randomNumberSpan);
+                    }
+                    
+                    gridElement.appendChild(dayCell);
+                }
+
+                const totalRenderedCells = gridElement.children.length - 7;
+                const remainingCells = (7 - (totalRenderedCells % 7)) % 7;
+                for (let i = 0; i < remainingCells; i++) {
+                    const emptyCell = document.createElement('div');
+                    emptyCell.classList.add('day-cell', 'empty-cell');
+                    gridElement.appendChild(emptyCell);
+                }
+            }
+
+            // --- Inicialización ---
+            populateMonthAndYearSelects();
+            populateNumberSelection(); // Genera los DIVs de números
+            renderCalendar();
+
+            // Manejar los clics de los botones
+            generateBtn.addEventListener('click', renderCalendar);
+            uncheckAllBtn.addEventListener('click', uncheckAllNumbers);
+            
+            // La lógica de actualización del contador y deshabilitación se maneja en toggleNumberSelection y applyNumberItemState
+            updateSelectedCount(); 
+            applyNumberItemState();
+        });
+    </script>
+</body>
+</html>
