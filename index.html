@@ -130,8 +130,9 @@
 
         /* Styling for "Limpiar Asignaciones" button */
         #clearAssignmentsBtn {
-            background-color: #607D8B; /* Blue Grey */
+            background-color: #E64A19; /* Blue Grey */
             margin-top: 20px;
+             padding: 20px;
         }
 
         #clearAssignmentsBtn:hover {
@@ -139,7 +140,7 @@
         }
 
         #clearAssignmentsBtn:active {
-            background-color: #37474F; /* Even Darker Blue Grey */
+            background-color: #37474F;/* Even Darker Blue Grey */
         }
 
         .number-selection, .group-selection, .day-group-assignment {
@@ -527,8 +528,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Sorteo de Territorios por Mes</h1>
-        <p>Selecciona un mes y un año, elige los territorios para el sorteo, y asigna grupos a días específicos de la semana. Se asignará solo un número por día (excepto lunes). Los números de grupos asignados solo aparecerán en sus días designados. Los números no se repetirán a menos que el Grupo F sea asignado a un día y se necesiten más números de los que tiene únicos para ese día.</p>
+        <h1>Territorios por Mes</h1>
         
         <div class="controls">
             <label for="startMonth">Mes</label>
@@ -564,7 +564,7 @@
         </div>
 
         <div class="number-selection">
-            <h3>Territorios a Sortear (<span id="selectedCount">0</span>/35)</h3>
+            <h3>Territorios (<span id="selectedCount">0</span>/35)</h3>
             <div class="number-grid" id="numberGrid">
             </div>
         </div>
