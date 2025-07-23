@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sorteo Aleatorio en Calendario Mensual</title>
+    <title>Sorteo de Territorios en Calendario Mensual</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         /* Variables CSS para colores Material Design */
@@ -120,8 +120,7 @@
             background-color: #D84315;
         }
 
-
-        .number-selection {
+        .number-selection, .group-selection, .day-group-assignment {
             background-color: var(--md-surface);
             border: 1px solid #e0e0e0; /* Borde más suave */
             border-radius: 8px;
@@ -131,7 +130,7 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Sombra para la sección */
         }
 
-        .number-selection h3 {
+        .number-selection h3, .group-selection h3, .day-group-assignment h3 {
             margin-top: 0;
             color: var(--md-primary-dark);
             text-align: center;
@@ -190,6 +189,77 @@
             box-shadow: none;
             transform: none;
         }
+
+        .group-selection-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .group-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--md-text);
+            padding: 8px 12px;
+            border: 1px solid #CFD8DC;
+            border-radius: 4px;
+            background-color: #ECEFF1;
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .group-checkbox:hover {
+            background-color: #DEE4E7;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .group-checkbox input[type="checkbox"] {
+            /* Basic styling for checkbox, can be custom-styled for Material Design look */
+            width: 18px;
+            height: 18px;
+            accent-color: var(--md-primary-light); /* Apply accent color to checkbox */
+            cursor: pointer;
+        }
+        .group-checkbox.checked {
+            background-color: var(--md-primary-light);
+            color: white;
+            border-color: var(--md-primary-dark);
+            box-shadow: 0 3px 6px rgba(0,0,0,0.25);
+        }
+        .group-checkbox.checked input[type="checkbox"] {
+             accent-color: white; /* For checked state, try to make inner check white if possible */
+        }
+
+
+        .day-group-assignment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .day-assignment-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+
+        .day-assignment-item label {
+            font-weight: 500;
+            color: var(--md-text);
+        }
+
+        .day-assignment-item select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 0.95em;
+        }
+
 
         .calendar-container {
             border: 1px solid #e0e0e0;
@@ -297,7 +367,7 @@
                 max-width: 300px;
             }
 
-            .number-selection {
+            .number-selection, .group-selection, .day-group-assignment {
                 padding: 15px;
             }
 
@@ -313,6 +383,14 @@
             }
             .number-item.selected {
                 transform: none; /* Eliminar efecto de "levantar" en móviles */
+            }
+
+            .group-selection-grid {
+                flex-direction: column;
+            }
+
+            .day-group-assignment-grid {
+                grid-template-columns: 1fr;
             }
 
             .calendar-container {
@@ -384,22 +462,53 @@
 </head>
 <body>
     <div class="container">
-        <h1>Territorio</h1>
-         <div class="controls">
+        <h1>Sorteo de Territorios por Mes</h1>
+        <p>Selecciona un mes y un año, elige los territorios para el sorteo, y asigna grupos a días específicos de la semana.</p>
+        
+        <div class="controls">
             <label for="startMonth">Mes</label>
-            <select id="startMonth">
-                </select>
+            <select id="startMonth"></select>
             <label for="startYear">Año:</label>
-            <select id="startYear">
-                </select>
-            <button id="generateBtn">Iniciar</button>
-            <button id="uncheckAllBtn">Desmarcar</button>
+            <select id="startYear"></select>
+            <button id="generateBtn">Iniciar Sorteo</button>
+            <button id="uncheckAllBtn">Deseleccionar Todos</button>
+        </div>
+
+        <div class="group-selection">
+            <h3>Seleccionar Grupos de Territorios</h3>
+            <div class="group-selection-grid">
+                <label class="group-checkbox">
+                    <input type="checkbox" id="groupA" data-group="A"> Grupo A (1-6)
+                </label>
+                <label class="group-checkbox">
+                    <input type="checkbox" id="groupB" data-group="B"> Grupo B (7-12)
+                </label>
+                <label class="group-checkbox">
+                    <input type="checkbox" id="groupC" data-group="C"> Grupo C (15,18,22-25)
+                </label>
+                <label class="group-checkbox">
+                    <input type="checkbox" id="groupD" data-group="D"> Grupo D (19-21,28,29,33)
+                </label>
+                <label class="group-checkbox">
+                    <input type="checkbox" id="groupE" data-group="E"> Grupo E (26,27,30-32,34,35)
+                </label>
+                <label class="group-checkbox">
+                    <input type="checkbox" id="groupF" data-group="F"> Grupo F (13,14,16,17)
+                </label>
+            </div>
         </div>
 
         <div class="number-selection">
-            <h3>Territorios (<span id="selectedCount">0</span>/35)</h3>
+            <h3>Territorios a Sortear (<span id="selectedCount">0</span>/35)</h3>
             <div class="number-grid" id="numberGrid">
+            </div>
+        </div>
+
+        <div class="day-group-assignment">
+            <h3>Asignar Grupos a Días de la Semana</h3>
+            <div class="day-group-assignment-grid">
                 </div>
+            <button id="clearAssignmentsBtn" style="margin-top: 20px; background-color: #78909C;">Limpiar Asignaciones</button>
         </div>
 
         <div id="calendarContainer" class="calendar-container">
@@ -407,7 +516,8 @@
             <div class="calendar-grid" id="calendarGrid"></div>
         </div>
     </div>
-<script>
+
+    <script>
         document.addEventListener('DOMContentLoaded', () => {
             const startMonthSelect = document.getElementById('startMonth');
             const startYearSelect = document.getElementById('startYear');
@@ -415,9 +525,11 @@
             const uncheckAllBtn = document.getElementById('uncheckAllBtn');
             const numberGrid = document.getElementById('numberGrid');
             const selectedCountSpan = document.getElementById('selectedCount');
+            const clearAssignmentsBtn = document.getElementById('clearAssignmentsBtn');
 
             const calendarGrid = document.getElementById('calendarGrid');
             const calendarHeader = document.getElementById('calendarHeader');
+            const dayGroupAssignmentGrid = document.querySelector('.day-group-assignment-grid');
 
             const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
             const monthNames = [
@@ -425,10 +537,22 @@
                 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
             ];
 
-            // Almacenar el estado de selección de los números
-            const selectedNumbersState = new Set(); // Usamos un Set para un acceso rápido
+            // Define groups
+            const groups = {
+                A: [1, 2, 3, 4, 5, 6],
+                B: [7, 8, 9, 10, 11, 12],
+                C: [15, 18, 22, 23, 24, 25],
+                D: [19, 20, 21, 28, 29, 33],
+                E: [26, 27, 30, 31, 32, 34, 35],
+                F: [13, 14, 16, 17]
+            };
+            const allNumbers = Array.from({ length: 35 }, (_, i) => i + 1); // Numbers 1 to 35
 
-            // Rellenar selectores de mes y año
+            let selectedNumbersState = new Set(); // Use a Set for quick access
+            let dayGroupAssignments = {}; // Stores assignments: { 'Martes': 'A', 'Jueves': 'C' }
+
+            // --- Initial Population Functions ---
+
             function populateMonthAndYearSelects() {
                 const currentYear = new Date().getFullYear();
                 
@@ -438,7 +562,6 @@
                     option.textContent = name;
                     startMonthSelect.appendChild(option);
                 });
-
                 startMonthSelect.value = new Date().getMonth();
 
                 for (let i = currentYear - 5; i <= currentYear + 5; i++) {
@@ -450,52 +573,102 @@
                 startYearSelect.value = currentYear;
             }
 
-            // Función para generar los elementos de números del 1 al 35 (ya no checkboxes visibles)
             function populateNumberSelection() {
                 numberGrid.innerHTML = '';
                 for (let i = 1; i <= 35; i++) {
-                    const numberItem = document.createElement('div'); // Ahora es un div
+                    const numberItem = document.createElement('div');
                     numberItem.classList.add('number-item');
                     numberItem.textContent = i;
-                    numberItem.dataset.value = i; // Guardar el valor en un data attribute
+                    numberItem.dataset.value = i;
                     
-                    // Inicialmente todos seleccionados
-                    selectedNumbersState.add(i);
-                    numberItem.classList.add('selected');
-
                     numberItem.addEventListener('click', toggleNumberSelection);
                     numberGrid.appendChild(numberItem);
                 }
                 updateSelectedCount();
-                applyNumberItemState(); // Asegura que el estado visual se aplique correctamente
+                applyNumberItemState();
             }
 
-            // Función para alternar la selección de un número
+            function populateDayGroupAssignments() {
+                dayGroupAssignmentGrid.innerHTML = '';
+                // Day mapping: 0: Sunday, 1: Monday, ..., 6: Saturday
+                // We want to assign groups to Tuesday (2) through Sunday (0)
+                const assignableDays = [
+                    { name: 'Martes', index: 2 },
+                    { name: 'Miércoles', index: 3 },
+                    { name: 'Jueves', index: 4 },
+                    { name: 'Viernes', index: 5 },
+                    { name: 'Sábado', index: 6 },
+                    { name: 'Domingo', index: 0 }
+                ];
+
+                assignableDays.forEach(day => {
+                    const item = document.createElement('div');
+                    item.classList.add('day-assignment-item');
+
+                    const label = document.createElement('label');
+                    label.textContent = `${day.name}:`;
+                    label.htmlFor = `assign-${day.name}`;
+                    item.appendChild(label);
+
+                    const select = document.createElement('select');
+                    select.id = `assign-${day.name}`;
+                    select.dataset.dayName = day.name;
+                    select.dataset.dayIndex = day.index; // Store numerical index for easier use
+                    
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = 'Ninguno';
+                    select.appendChild(defaultOption);
+
+                    for (const groupName in groups) {
+                        const option = document.createElement('option');
+                        option.value = groupName;
+                        option.textContent = `Grupo ${groupName}`;
+                        select.appendChild(option);
+                    }
+                    select.addEventListener('change', (event) => {
+                        const dayKey = event.target.dataset.dayName;
+                        const groupValue = event.target.value;
+                        if (groupValue) {
+                            // Check for duplicate assignments
+                            for (const existingDay in dayGroupAssignments) {
+                                if (dayGroupAssignments[existingDay] === groupValue && existingDay !== dayKey) {
+                                    alert(`El Grupo ${groupValue} ya está asignado a ${existingDay}. Por favor, desasigna el grupo de ese día primero.`);
+                                    event.target.value = ''; // Reset the select
+                                    delete dayGroupAssignments[dayKey];
+                                    return;
+                                }
+                            }
+                            dayGroupAssignments[dayKey] = groupValue;
+                        } else {
+                            delete dayGroupAssignments[dayKey];
+                        }
+                    });
+                    item.appendChild(select);
+                    dayGroupAssignmentGrid.appendChild(item);
+                });
+            }
+
+            // --- Number Selection Logic ---
+
             function toggleNumberSelection(event) {
                 const numberItem = event.target;
                 const numberValue = parseInt(numberItem.dataset.value);
 
                 if (selectedNumbersState.has(numberValue)) {
-                    // Si ya está seleccionado, deseleccionarlo
                     selectedNumbersState.delete(numberValue);
                 } else {
-                    // Si no está seleccionado, seleccionarlo (con límite)
-                    if (selectedNumbersState.size < 35) {
-                        selectedNumbersState.add(numberValue);
-                    } else {
-                        alert('Solo puedes seleccionar un máximo de 35 números.');
-                    }
+                    selectedNumbersState.add(numberValue);
                 }
                 updateSelectedCount();
-                applyNumberItemState(); // Actualizar el estilo visual
+                applyNumberItemState();
+                updateGroupCheckboxes(); // Update group checkboxes based on individual selections
             }
 
-            // Actualizar el contador de números seleccionados y el estado visual
             function updateSelectedCount() {
                 selectedCountSpan.textContent = selectedNumbersState.size;
             }
 
-            // Aplica las clases 'selected' y 'disabled' a los number-items
             function applyNumberItemState() {
                 numberGrid.querySelectorAll('.number-item').forEach(item => {
                     const numberValue = parseInt(item.dataset.value);
@@ -505,7 +678,7 @@
                         item.classList.remove('selected');
                     }
 
-                    // Deshabilitar visualmente si ya hay 35 seleccionados y este no lo está
+                    // Disable if 35 are selected and this one isn't
                     if (selectedNumbersState.size >= 35 && !selectedNumbersState.has(numberValue)) {
                         item.classList.add('disabled');
                     } else {
@@ -514,25 +687,98 @@
                 });
             }
 
-
-            // Función para desmarcar todas las casillas (ahora deseleccionar visualmente)
             function uncheckAllNumbers() {
                 selectedNumbersState.clear();
                 updateSelectedCount();
-                applyNumberItemState(); // Actualizar el estilo visual
+                applyNumberItemState();
+                updateGroupCheckboxes(); // Uncheck all group checkboxes
+                clearDayGroupAssignments(); // Also clear day assignments
             }
 
-            // Función para obtener la clave de fecha en formato YYYY-MM-DD
+            // --- Group Selection Logic ---
+
+            const groupCheckboxes = document.querySelectorAll('.group-checkbox input[type="checkbox"]');
+
+            groupCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', (event) => {
+                    const groupName = event.target.dataset.group;
+                    const groupNumbers = groups[groupName];
+                    const parentLabel = event.target.closest('label');
+
+                    if (event.target.checked) {
+                        groupNumbers.forEach(num => selectedNumbersState.add(num));
+                        parentLabel.classList.add('checked');
+                    } else {
+                        groupNumbers.forEach(num => selectedNumbersState.delete(num));
+                        parentLabel.classList.remove('checked');
+                    }
+                    updateSelectedCount();
+                    applyNumberItemState();
+                });
+            });
+
+            function updateGroupCheckboxes() {
+                groupCheckboxes.forEach(checkbox => {
+                    const groupName = checkbox.dataset.group;
+                    const groupNumbers = groups[groupName];
+                    const parentLabel = checkbox.closest('label');
+
+                    // Check if all numbers in the group are selected
+                    const allInGroupSelected = groupNumbers.every(num => selectedNumbersState.has(num));
+
+                    checkbox.checked = allInGroupSelected;
+                    if (allInGroupSelected) {
+                        parentLabel.classList.add('checked');
+                    } else {
+                        parentLabel.classList.remove('checked');
+                    }
+                });
+            }
+
+            // --- Day Group Assignment Logic ---
+
+            clearAssignmentsBtn.addEventListener('click', clearDayGroupAssignments);
+
+            function clearDayGroupAssignments() {
+                dayGroupAssignments = {};
+                document.querySelectorAll('.day-group-assignment-grid select').forEach(select => {
+                    select.value = ''; // Reset select value
+                });
+            }
+
+            // --- Calendar Rendering Logic ---
+
             function getDateKey(date) {
                 return date.toISOString().slice(0, 10);
             }
 
-            // Función principal para renderizar el calendario
-            function renderCalendar() {
-                const selectedNumbersArray = Array.from(selectedNumbersState); // Convertir Set a Array
-                let selectedNumbers = selectedNumbersArray.sort(() => Math.random() - 0.5); // Barajar
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
 
-                if (selectedNumbers.length === 0) {
+            function renderCalendar() {
+                // Step 1: Ensure 35 numbers are selected (auto-fill if less)
+                if (selectedNumbersState.size < 35) {
+                    const missingNumbers = allNumbers.filter(num => !selectedNumbersState.has(num));
+                    const numbersToAddCount = 35 - selectedNumbersState.size;
+                    const shuffledMissing = shuffleArray([...missingNumbers]);
+                    
+                    for (let i = 0; i < numbersToAddCount; i++) {
+                        if (shuffledMissing[i]) { // Ensure there are numbers to add
+                            selectedNumbersState.add(shuffledMissing[i]);
+                        }
+                    }
+                    alert(`Se han autocompletado ${numbersToAddCount} números para alcanzar los 35 requeridos.`);
+                    updateSelectedCount();
+                    applyNumberItemState();
+                    updateGroupCheckboxes(); // Update group checkboxes if numbers were auto-added
+                }
+
+                if (selectedNumbersState.size === 0) {
                     alert('Por favor, selecciona al menos un número para el sorteo.');
                     return;
                 }
@@ -540,40 +786,127 @@
                 const selectedMonth = parseInt(startMonthSelect.value);
                 const selectedYear = parseInt(startYearSelect.value);
 
-                let currentLotteryDate = new Date(selectedYear, selectedMonth, 1);
-                currentLotteryDate.setHours(0, 0, 0, 0);
+                // Clone selectedNumbersState to work with it
+                let availableNumbers = shuffleArray(Array.from(selectedNumbersState));
+                
+                // Prepare numbers for assignment
+                const numbersToAssign = new Map(); // Map to store assigned numbers by dateKey
+                const assignedGroupNumbers = new Set(); // Keep track of numbers already assigned via groups
 
-                const numbersByDate = new Map();
+                const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1);
+                firstDayOfMonth.setHours(0, 0, 0, 0);
+                const lastDayOfMonth = new Date(selectedYear, selectedMonth + 1, 0);
+                lastDayOfMonth.setHours(0, 0, 0, 0);
 
-                for (let i = 0; i < selectedNumbers.length; i++) {
-                    // Asegurarse de que el día actual no sea lunes (1)
-                    while (currentLotteryDate.getDay() === 1) { // 1 es Lunes
-                        currentLotteryDate.setDate(currentLotteryDate.getDate() + 1);
+                // Temporary map to hold numbers that belong to assigned groups
+                const groupNumbersForDates = new Map(); // {dateKey: [group numbers]}
+
+                // Process fixed group assignments first
+                for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
+                    const currentDate = new Date(selectedYear, selectedMonth, day);
+                    currentDate.setHours(0, 0, 0, 0);
+                    const dayOfWeek = currentDate.getDay(); // 0: Sunday, 1: Monday, ..., 6: Saturday
+                    const dateKey = getDateKey(currentDate);
+
+                    if (dayOfWeek === 1) continue; // Skip Mondays
+
+                    // Find day name for mapping (adjusting Sunday to "Domingo" from dayNames array)
+                    const currentDayName = dayNames[dayOfWeek === 0 ? 6 : dayOfWeek - 1]; // dayNames: ['Lunes', ..., 'Domingo']
+
+                    if (dayGroupAssignments[currentDayName]) {
+                        const assignedGroup = dayGroupAssignments[currentDayName];
+                        const groupNums = groups[assignedGroup].filter(num => selectedNumbersState.has(num)); // Only selected group numbers
+                        
+                        if (groupNums.length > 0) {
+                            // Add group numbers to this date's list
+                            if (!groupNumbersForDates.has(dateKey)) {
+                                groupNumbersForDates.set(dateKey, []);
+                            }
+                            groupNumbersForDates.get(dateKey).push(...shuffleArray(groupNums)); // Shuffle group numbers too
+                            groupNums.forEach(num => assignedGroupNumbers.add(num)); // Mark as assigned
+                        }
                     }
-                    
-                    const dateKey = getDateKey(currentLotteryDate);
-                    
-                    // Solo asigna el número si la fecha está dentro del mes seleccionado
-                    if (currentLotteryDate.getMonth() === selectedMonth && currentLotteryDate.getFullYear() === selectedYear) {
-                         numbersByDate.set(dateKey, selectedNumbers[i]);
-                    } else {
-                        // Si el número se salió del mes, detenemos la asignación.
-                        break; 
+                }
+                
+                // Filter out numbers that have been assigned by group
+                availableNumbers = availableNumbers.filter(num => !assignedGroupNumbers.has(num));
+
+                // Distribute remaining numbers to unassigned dates or dates with space
+                let currentDayCounter = new Date(selectedYear, selectedMonth, 1); // Start from the first day
+                currentDayCounter.setHours(0, 0, 0, 0);
+
+                while (availableNumbers.length > 0 && currentDayCounter <= lastDayOfMonth) {
+                    const dayOfWeek = currentDayCounter.getDay();
+                    if (dayOfWeek === 1) { // Skip Mondays
+                        currentDayCounter.setDate(currentDayCounter.getDate() + 1);
+                        continue;
                     }
-                   
-                    currentLotteryDate.setDate(currentLotteryDate.getDate() + 1);
+
+                    const dateKey = getDateKey(currentDayCounter);
+
+                    if (!groupNumbersForDates.has(dateKey)) {
+                        groupNumbersForDates.set(dateKey, []);
+                    }
+
+                    // Assign one random number from availableNumbers
+                    if (availableNumbers.length > 0) {
+                        const numToAssign = availableNumbers.shift(); // Take one from shuffled list
+                        groupNumbersForDates.get(dateKey).push(numToAssign);
+                    }
+                    currentDayCounter.setDate(currentDayCounter.getDate() + 1);
                 }
 
-                // Renderizar el único calendario
-                renderSingleCalendar(calendarGrid, calendarHeader, selectedYear, selectedMonth, numbersByDate);
+                // If any numbers are still unassigned after iterating through the month once (e.g., more numbers than days)
+                // This scenario shouldn't happen with 35 numbers and a month, but as a safeguard.
+                if (availableNumbers.length > 0) {
+                     // Start from the beginning of the month again for overflow
+                    currentDayCounter = new Date(selectedYear, selectedMonth, 1);
+                    currentDayCounter.setHours(0, 0, 0, 0);
+                    let overflowCounter = 0; // Prevent infinite loops
+
+                    while (availableNumbers.length > 0 && overflowCounter < 100) { // Limit iterations
+                        const dayOfWeek = currentDayCounter.getDay();
+                        if (dayOfWeek === 1) { // Skip Mondays
+                            currentDayCounter.setDate(currentDayCounter.getDate() + 1);
+                            continue;
+                        }
+
+                        const dateKey = getDateKey(currentDayCounter);
+                        if (!groupNumbersForDates.has(dateKey)) {
+                            groupNumbersForDates.set(dateKey, []);
+                        }
+
+                        const numToAssign = availableNumbers.shift();
+                        groupNumbersForDates.get(dateKey).push(numToAssign);
+                        
+                        currentDayCounter.setDate(currentDayCounter.getDate() + 1);
+                        // Loop back to the first day of the month if end is reached
+                        if (currentDayCounter > lastDayOfMonth) {
+                            currentDayCounter = new Date(selectedYear, selectedMonth, 1);
+                            currentDayCounter.setHours(0,0,0,0);
+                            overflowCounter++;
+                        }
+                    }
+                }
+                
+                // Flatten the numbers for each day (if multiple assigned, they will show in one cell)
+                const finalNumbersByDate = new Map();
+                groupNumbersForDates.forEach((nums, dateKey) => {
+                    // Sort numbers for cleaner display if multiple per day
+                    finalNumbersByDate.set(dateKey, nums.sort((a,b) => a - b).join(', '));
+                });
+
+
+                renderSingleCalendar(calendarGrid, calendarHeader, selectedYear, selectedMonth, finalNumbersByDate);
             }
 
-            // Función auxiliar para renderizar un solo mes de calendario
             function renderSingleCalendar(gridElement, headerElement, year, month, numbersByDate) {
                 gridElement.innerHTML = '';
                 headerElement.textContent = `${monthNames[month]} ${year}`;
 
-                dayNames.forEach(name => {
+                // Day names (adjusted for Lunes = 0)
+                const displayDayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+                displayDayNames.forEach(name => {
                     const dayNameCell = document.createElement('div');
                     dayNameCell.classList.add('day-name');
                     dayNameCell.textContent = name;
@@ -585,10 +918,10 @@
                 const lastDayOfMonth = new Date(year, month + 1, 0);
                 lastDayOfMonth.setHours(0, 0, 0, 0);
 
-                let firstDayIndex = firstDayOfMonth.getDay();
-                if (firstDayIndex === 0) { // Si es Domingo (0), queremos que su índice visual sea 6 (al final de la fila)
+                let firstDayIndex = firstDayOfMonth.getDay(); // 0: Sunday, 1: Monday, ..., 6: Saturday
+                if (firstDayIndex === 0) { // If it's Sunday, it should be the 6th position (after Sat)
                     firstDayIndex = 6;
-                } else { // Para Lunes (1) a Sábado (6), restamos 1 para que Lunes sea 0
+                } else { // For Monday (1) to Saturday (6), subtract 1 to make Monday index 0
                     firstDayIndex = firstDayIndex - 1;
                 }
 
@@ -601,7 +934,7 @@
                 for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
                     const currentDay = new Date(year, month, day);
                     currentDay.setHours(0, 0, 0, 0);
-                    const dayOfWeek = currentDay.getDay();
+                    const dayOfWeek = currentDay.getDay(); // 0: Sunday, 1: Monday, ..., 6: Saturday
 
                     const dayCell = document.createElement('div');
                     dayCell.classList.add('day-cell', 'current-month');
@@ -611,7 +944,7 @@
                     dayNumberSpan.textContent = day;
                     dayCell.appendChild(dayNumberSpan);
 
-                    if (dayOfWeek === 1) { // 1 es Lunes
+                    if (dayOfWeek === 1) { // 1 is Monday
                         dayCell.classList.add('monday');
                     }
 
@@ -635,18 +968,16 @@
                 }
             }
 
-            // --- Inicialización ---
+            // --- Initialization ---
             populateMonthAndYearSelects();
-            populateNumberSelection(); // Genera los DIVs de números
+            populateNumberSelection(); // Generates the number DIVs
+            populateDayGroupAssignments(); // Generates day assignment selects
+            updateGroupCheckboxes(); // Ensure initial state reflects all numbers selected
             renderCalendar();
 
-            // Manejar los clics de los botones
+            // --- Event Listeners ---
             generateBtn.addEventListener('click', renderCalendar);
             uncheckAllBtn.addEventListener('click', uncheckAllNumbers);
-            
-            // La lógica de actualización del contador y deshabilitación se maneja en toggleNumberSelection y applyNumberItemState
-            updateSelectedCount(); 
-            applyNumberItemState();
         });
     </script>
 </body>
