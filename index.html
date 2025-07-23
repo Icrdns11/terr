@@ -120,6 +120,20 @@
             background-color: #D84315;
         }
 
+        /* Styling for "Limpiar Asignaciones" button */
+        #clearAssignmentsBtn {
+            background-color: #607D8B; /* Blue Grey */
+            margin-top: 20px;
+        }
+
+        #clearAssignmentsBtn:hover {
+            background-color: #455A64; /* Darker Blue Grey */
+        }
+
+        #clearAssignmentsBtn:active {
+            background-color: #37474F; /* Even Darker Blue Grey */
+        }
+
         .number-selection, .group-selection, .day-group-assignment {
             background-color: var(--md-surface);
             border: 1px solid #e0e0e0; /* Borde más suave */
@@ -508,7 +522,7 @@
             <h3>Asignar Grupos a Días de la Semana</h3>
             <div class="day-group-assignment-grid">
                 </div>
-            <button id="clearAssignmentsBtn" style="margin-top: 20px; background-color: #78909C;">Limpiar Asignaciones</button>
+            <button id="clearAssignmentsBtn">Limpiar Asignaciones</button>
         </div>
 
         <div id="calendarContainer" class="calendar-container">
@@ -629,16 +643,18 @@
                     select.addEventListener('change', (event) => {
                         const dayKey = event.target.dataset.dayName;
                         const groupValue = event.target.value;
-                        if (groupValue) {
-                            // Check for duplicate assignments
-                            for (const existingDay in dayGroupAssignments) {
-                                if (dayGroupAssignments[existingDay] === groupValue && existingDay !== dayKey) {
-                                    alert(`El Grupo ${groupValue} ya está asignado a ${existingDay}. Por favor, desasigna el grupo de ese día primero.`);
-                                    event.target.value = ''; // Reset the select
-                                    delete dayGroupAssignments[dayKey];
-                                    return;
-                                }
+                        
+                        // Prevent assigning the same group to multiple days
+                        for (const existingDay in dayGroupAssignments) {
+                            if (dayGroupAssignments[existingDay] === groupValue && existingDay !== dayKey && groupValue !== '') {
+                                alert(`El Grupo ${groupValue} ya está asignado a ${existingDay}. Por favor, desasigna el grupo de ese día primero.`);
+                                event.target.value = ''; // Reset the select
+                                delete dayGroupAssignments[dayKey];
+                                return;
                             }
+                        }
+
+                        if (groupValue) {
                             dayGroupAssignments[dayKey] = groupValue;
                         } else {
                             delete dayGroupAssignments[dayKey];
@@ -678,12 +694,11 @@
                         item.classList.remove('selected');
                     }
 
-                    // Disable if 35 are selected and this one isn't
-                    if (selectedNumbersState.size >= 35 && !selectedNumbersState.has(numberValue)) {
-                        item.classList.add('disabled');
-                    } else {
-                        item.classList.remove('disabled');
-                    }
+                    // There's no longer a hard limit of 35 for selection.
+                    // The 'disabled' class is now primarily for styling unselected items
+                    // if they are not meant to be interacted with.
+                    // For this logic, we remove the disabled state unless explicitly needed.
+                    item.classList.remove('disabled');
                 });
             }
 
@@ -761,143 +776,75 @@
             }
 
             function renderCalendar() {
-                // Step 1: Ensure 35 numbers are selected (auto-fill if less)
-                if (selectedNumbersState.size < 35) {
-                    const missingNumbers = allNumbers.filter(num => !selectedNumbersState.has(num));
-                    const numbersToAddCount = 35 - selectedNumbersState.size;
-                    const shuffledMissing = shuffleArray([...missingNumbers]);
-                    
-                    for (let i = 0; i < numbersToAddCount; i++) {
-                        if (shuffledMissing[i]) { // Ensure there are numbers to add
-                            selectedNumbersState.add(shuffledMissing[i]);
-                        }
-                    }
-                    alert(`Se han autocompletado ${numbersToAddCount} números para alcanzar los 35 requeridos.`);
-                    updateSelectedCount();
-                    applyNumberItemState();
-                    updateGroupCheckboxes(); // Update group checkboxes if numbers were auto-added
-                }
-
-                if (selectedNumbersState.size === 0) {
-                    alert('Por favor, selecciona al menos un número para el sorteo.');
-                    return;
-                }
-
                 const selectedMonth = parseInt(startMonthSelect.value);
                 const selectedYear = parseInt(startYearSelect.value);
 
-                // Clone selectedNumbersState to work with it
-                let availableNumbers = shuffleArray(Array.from(selectedNumbersState));
-                
-                // Prepare numbers for assignment
-                const numbersToAssign = new Map(); // Map to store assigned numbers by dateKey
-                const assignedGroupNumbers = new Set(); // Keep track of numbers already assigned via groups
+                // Start with all selected numbers, shuffle them for random assignment
+                let numbersToAssign = shuffleArray(Array.from(selectedNumbersState));
+                const assignedNumbers = new Set(); // To keep track of numbers already assigned to a day
+
+                const finalAssignments = new Map(); // Stores dateKey -> assignedNumber
 
                 const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1);
                 firstDayOfMonth.setHours(0, 0, 0, 0);
                 const lastDayOfMonth = new Date(selectedYear, selectedMonth + 1, 0);
                 lastDayOfMonth.setHours(0, 0, 0, 0);
 
-                // Temporary map to hold numbers that belong to assigned groups
-                const groupNumbersForDates = new Map(); // {dateKey: [group numbers]}
-
-                // Process fixed group assignments first
-                for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
-                    const currentDate = new Date(selectedYear, selectedMonth, day);
-                    currentDate.setHours(0, 0, 0, 0);
+                // --- Pass 1: Assign numbers from explicitly assigned groups ---
+                let currentDate = new Date(firstDayOfMonth);
+                while (currentDate <= lastDayOfMonth) {
                     const dayOfWeek = currentDate.getDay(); // 0: Sunday, 1: Monday, ..., 6: Saturday
                     const dateKey = getDateKey(currentDate);
 
-                    if (dayOfWeek === 1) continue; // Skip Mondays
-
-                    // Find day name for mapping (adjusting Sunday to "Domingo" from dayNames array)
-                    const currentDayName = dayNames[dayOfWeek === 0 ? 6 : dayOfWeek - 1]; // dayNames: ['Lunes', ..., 'Domingo']
-
-                    if (dayGroupAssignments[currentDayName]) {
-                        const assignedGroup = dayGroupAssignments[currentDayName];
-                        const groupNums = groups[assignedGroup].filter(num => selectedNumbersState.has(num)); // Only selected group numbers
-                        
-                        if (groupNums.length > 0) {
-                            // Add group numbers to this date's list
-                            if (!groupNumbersForDates.has(dateKey)) {
-                                groupNumbersForDates.set(dateKey, []);
-                            }
-                            groupNumbersForDates.get(dateKey).push(...shuffleArray(groupNums)); // Shuffle group numbers too
-                            groupNums.forEach(num => assignedGroupNumbers.add(num)); // Mark as assigned
-                        }
-                    }
-                }
-                
-                // Filter out numbers that have been assigned by group
-                availableNumbers = availableNumbers.filter(num => !assignedGroupNumbers.has(num));
-
-                // Distribute remaining numbers to unassigned dates or dates with space
-                let currentDayCounter = new Date(selectedYear, selectedMonth, 1); // Start from the first day
-                currentDayCounter.setHours(0, 0, 0, 0);
-
-                while (availableNumbers.length > 0 && currentDayCounter <= lastDayOfMonth) {
-                    const dayOfWeek = currentDayCounter.getDay();
                     if (dayOfWeek === 1) { // Skip Mondays
-                        currentDayCounter.setDate(currentDayCounter.getDate() + 1);
+                        currentDate.setDate(currentDate.getDate() + 1);
                         continue;
                     }
 
-                    const dateKey = getDateKey(currentDayCounter);
+                    // Map dayOfWeek (0-6) to dayName in dayNames array (Lunes, Martes...)
+                    const currentDayName = dayNames[dayOfWeek === 0 ? 6 : dayOfWeek - 1]; 
 
-                    if (!groupNumbersForDates.has(dateKey)) {
-                        groupNumbersForDates.set(dateKey, []);
-                    }
+                    if (dayGroupAssignments[currentDayName]) {
+                        const assignedGroup = dayGroupAssignments[currentDayName];
+                        // Filter numbers from this group that are selected AND not yet assigned
+                        const eligibleGroupNumbers = shuffleArray(groups[assignedGroup].filter(
+                            num => selectedNumbersState.has(num) && !assignedNumbers.has(num)
+                        ));
 
-                    // Assign one random number from availableNumbers
-                    if (availableNumbers.length > 0) {
-                        const numToAssign = availableNumbers.shift(); // Take one from shuffled list
-                        groupNumbersForDates.get(dateKey).push(numToAssign);
+                        if (eligibleGroupNumbers.length > 0) {
+                            const numberToPlace = eligibleGroupNumbers.shift();
+                            finalAssignments.set(dateKey, numberToPlace);
+                            assignedNumbers.add(numberToPlace);
+                        }
                     }
-                    currentDayCounter.setDate(currentDayCounter.getDate() + 1);
+                    currentDate.setDate(currentDate.getDate() + 1);
                 }
 
-                // If any numbers are still unassigned after iterating through the month once (e.g., more numbers than days)
-                // This scenario shouldn't happen with 35 numbers and a month, but as a safeguard.
-                if (availableNumbers.length > 0) {
-                     // Start from the beginning of the month again for overflow
-                    currentDayCounter = new Date(selectedYear, selectedMonth, 1);
-                    currentDayCounter.setHours(0, 0, 0, 0);
-                    let overflowCounter = 0; // Prevent infinite loops
+                // --- Pass 2: Assign remaining selected numbers to any available day ---
+                // Filter out numbers that have already been assigned in Pass 1
+                let remainingSelectedNumbers = numbersToAssign.filter(num => !assignedNumbers.has(num));
+                
+                currentDate = new Date(firstDayOfMonth); // Reset date for second pass
+                while (currentDate <= lastDayOfMonth && remainingSelectedNumbers.length > 0) {
+                    const dayOfWeek = currentDate.getDay();
+                    const dateKey = getDateKey(currentDate);
 
-                    while (availableNumbers.length > 0 && overflowCounter < 100) { // Limit iterations
-                        const dayOfWeek = currentDayCounter.getDay();
-                        if (dayOfWeek === 1) { // Skip Mondays
-                            currentDayCounter.setDate(currentDayCounter.getDate() + 1);
-                            continue;
-                        }
-
-                        const dateKey = getDateKey(currentDayCounter);
-                        if (!groupNumbersForDates.has(dateKey)) {
-                            groupNumbersForDates.set(dateKey, []);
-                        }
-
-                        const numToAssign = availableNumbers.shift();
-                        groupNumbersForDates.get(dateKey).push(numToAssign);
-                        
-                        currentDayCounter.setDate(currentDayCounter.getDate() + 1);
-                        // Loop back to the first day of the month if end is reached
-                        if (currentDayCounter > lastDayOfMonth) {
-                            currentDayCounter = new Date(selectedYear, selectedMonth, 1);
-                            currentDayCounter.setHours(0,0,0,0);
-                            overflowCounter++;
-                        }
+                    if (dayOfWeek === 1) { // Skip Mondays
+                        currentDate.setDate(currentDate.getDate() + 1);
+                        continue;
                     }
+
+                    // If this day doesn't already have a number assigned
+                    if (!finalAssignments.has(dateKey)) {
+                        const numberToPlace = remainingSelectedNumbers.shift();
+                        finalAssignments.set(dateKey, numberToPlace);
+                        assignedNumbers.add(numberToPlace);
+                    }
+                    currentDate.setDate(currentDate.getDate() + 1);
                 }
                 
-                // Flatten the numbers for each day (if multiple assigned, they will show in one cell)
-                const finalNumbersByDate = new Map();
-                groupNumbersForDates.forEach((nums, dateKey) => {
-                    // Sort numbers for cleaner display if multiple per day
-                    finalNumbersByDate.set(dateKey, nums.sort((a,b) => a - b).join(', '));
-                });
-
-
-                renderSingleCalendar(calendarGrid, calendarHeader, selectedYear, selectedMonth, finalNumbersByDate);
+                // Now render the calendar with `finalAssignments`
+                renderSingleCalendar(calendarGrid, calendarHeader, selectedYear, selectedMonth, finalAssignments);
             }
 
             function renderSingleCalendar(gridElement, headerElement, year, month, numbersByDate) {
@@ -973,7 +920,7 @@
             populateNumberSelection(); // Generates the number DIVs
             populateDayGroupAssignments(); // Generates day assignment selects
             updateGroupCheckboxes(); // Ensure initial state reflects all numbers selected
-            renderCalendar();
+            renderCalendar(); // Initial render
 
             // --- Event Listeners ---
             generateBtn.addEventListener('click', renderCalendar);
@@ -982,3 +929,4 @@
     </script>
 </body>
 </html>
+```
