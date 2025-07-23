@@ -21,7 +21,7 @@
             /* New variables for group colors */
             --group-A-color: #26A69A; /* Teal */
             --group-B-color: #AB47BC; /* Purple */
-            --group-C-color: #FFEE58; /* Amber */
+            --group-C-color: #673AB7; /* Deep Purple for Group C */
             --group-D-color: #EF5350; /* Red */
             --group-E-color: #66BB6A; /* Green */
             --group-F-color: #42A5F5; /* Blue */
@@ -366,7 +366,7 @@
             color: var(--group-B-color);
         }
         .random-number.group-C {
-            background-color: #FFFDE7; /* Light Amber */
+            background-color: #EDE7F6; /* Light Deep Purple */
             color: var(--group-C-color);
         }
         .random-number.group-D {
@@ -698,7 +698,7 @@
                         // Prevent assigning the same group to multiple days
                         for (const existingDay in dayGroupAssignments) {
                             if (dayGroupAssignments[existingDay] === groupValue && existingDay !== dayKey && groupValue !== '') {
-                                // Removed alert, silently reset if duplicate
+                                // Silently reset if duplicate
                                 event.target.value = ''; 
                                 delete dayGroupAssignments[dayKey];
                                 return;
@@ -825,11 +825,6 @@
                 const selectedMonth = parseInt(startMonthSelect.value);
                 const selectedYear = parseInt(startYearSelect.value);
 
-                if (selectedNumbersState.size === 0) {
-                    // Removed alert
-                    return;
-                }
-
                 const firstDayOfMonth = new Date(selectedYear, selectedMonth, 1);
                 firstDayOfMonth.setHours(0, 0, 0, 0);
                 const lastDayOfMonth = new Date(selectedYear, selectedMonth + 1, 0);
@@ -838,10 +833,63 @@
                 const finalAssignments = new Map(); // Stores dateKey -> { number: num, repeated: boolean, group: 'A'|'B'|... }
                 const usedUniqueNumbers = new Set(); // To ensure unique numbers are used first globally
 
-                // Prepare a copy of selected numbers that can be consumed
-                let availableUniqueNumbersPool = shuffleArray(Array.from(selectedNumbersState));
+                // Get all assignable dates in the month (excluding Mondays)
+                const assignableDates = [];
+                let tempDate = new Date(firstDayOfMonth);
+                while (tempDate <= lastDayOfMonth) {
+                    if (tempDate.getDay() !== 1) { // Skip Monday (1)
+                        assignableDates.push(getDateKey(tempDate));
+                    }
+                    tempDate.setDate(tempDate.getDate() + 1);
+                }
 
-                // Store group numbers that are selected and available for their assigned days
+                // --- Automatic Number Selection (if needed) ---
+                // Identify which groups are assigned to days
+                const assignedGroupsInCalendar = new Set(Object.values(dayGroupAssignments));
+                
+                // Keep track of how many unique numbers are needed from each assigned group for exclusive days
+                const groupNeeds = {};
+                for (const groupName of assignedGroupsInCalendar) {
+                    groupNeeds[groupName] = 0;
+                }
+
+                tempDate = new Date(firstDayOfMonth);
+                while (tempDate <= lastDayOfMonth) {
+                    const dayOfWeek = tempDate.getDay();
+                    if (dayOfWeek !== 1) { // Not Monday
+                        const currentDayName = dayNames[dayOfWeek === 0 ? 6 : dayOfWeek - 1];
+                        if (dayGroupAssignments[currentDayName]) {
+                            groupNeeds[dayGroupAssignments[currentDayName]]++;
+                        }
+                    }
+                    tempDate.setDate(tempDate.getDate() + 1);
+                }
+
+                // For each assigned group, ensure enough numbers are selected
+                let numbersAddedAutomatically = false;
+                for (const groupName of assignedGroupsInCalendar) {
+                    const groupMembers = groups[groupName];
+                    const selectedInGroup = groupMembers.filter(num => selectedNumbersState.has(num)).length;
+                    
+                    if (selectedInGroup < groupNeeds[groupName]) {
+                        const needed = groupNeeds[groupName] - selectedInGroup;
+                        const availableToAdd = groupMembers.filter(num => !selectedNumbersState.has(num));
+                        
+                        // Add up to 'needed' numbers from this group to selectedNumbersState
+                        for (let i = 0; i < Math.min(needed, availableToAdd.length); i++) {
+                            selectedNumbersState.add(availableToAdd[i]);
+                            numbersAddedAutomatically = true;
+                        }
+                    }
+                }
+                if (numbersAddedAutomatically) {
+                    // Update UI if numbers were added automatically
+                    updateSelectedCount();
+                    applyNumberItemState();
+                    updateGroupCheckboxes();
+                }
+                // Re-prepare pools based on potentially updated selectedNumbersState
+                let availableUniqueNumbersPool = shuffleArray(Array.from(selectedNumbersState));
                 const groupSpecificAvailableNumbers = {};
                 for (const groupName in groups) {
                     groupSpecificAvailableNumbers[groupName] = shuffleArray(
@@ -850,10 +898,7 @@
                 }
 
                 // --- Pass 1: Assign numbers from explicitly assigned groups ---
-                // This pass prioritizes group assignments and uses unique numbers from the general pool first.
-                // Group F has special handling for repetition.
-
-                let currentDate = new Date(firstDayOfMonth);
+                currentDate = new Date(firstDayOfMonth);
                 while (currentDate <= lastDayOfMonth) {
                     const dayOfWeek = currentDate.getDay(); // 0: Sunday, 1: Monday, ..., 6: Saturday
                     const dateKey = getDateKey(currentDate);
@@ -863,7 +908,6 @@
                         continue;
                     }
 
-                    // Map dayOfWeek (0-6) to dayName in dayNames array (Lunes, Martes...)
                     const currentDayName = dayNames[dayOfWeek === 0 ? 6 : dayOfWeek - 1]; 
 
                     if (dayGroupAssignments[currentDayName]) {
@@ -873,24 +917,20 @@
                         let numberToPlace = null;
                         let isRepeated = false;
 
-                        // Try to get a unique number for this group
-                        const uniqueInGroup = groupNumsPool.filter(num => !usedUniqueNumbers.has(num));
-                        if (uniqueInGroup.length > 0) {
-                            // Find and remove this number from the original availableUniqueNumbersPool
-                            // to ensure it's not used again for non-group days
-                            const numIndexInGlobalPool = availableUniqueNumbersPool.indexOf(uniqueInGroup[0]);
-                            if (numIndexInGlobalPool !== -1) {
-                                numberToPlace = availableUniqueNumbersPool.splice(numIndexInGlobalPool, 1)[0];
-                            } else {
-                                // This should ideally not happen if logic is perfect, but as a fallback
-                                numberToPlace = uniqueInGroup.shift();
-                            }
+                        // Try to get a unique number for this group that hasn't been used globally yet
+                        const uniqueInGroupNotGloballyUsed = groupNumsPool.filter(num => !usedUniqueNumbers.has(num));
+                        
+                        if (uniqueInGroupNotGloballyUsed.length > 0) {
+                            numberToPlace = uniqueInGroupNotGloballyUsed.shift();
                             usedUniqueNumbers.add(numberToPlace);
                         } else if (assignedGroup === 'F' && groupNumsPool.length > 0) {
                             // Special rule for Group F: if no unique numbers left, repeat from its own pool
-                            const numToRepeat = groupNumsPool[Math.floor(Math.random() * groupNumsPool.length)];
-                            numberToPlace = numToRepeat;
-                            isRepeated = true;
+                            // Ensure it's not a number that was already uniquely assigned *in this pass*
+                            const availableForFRepetition = groupNumsPool.filter(num => !finalAssignments.has(dateKey) || (finalAssignments.get(dateKey).group !== 'F' && finalAssignments.get(dateKey).number !== num));
+                            if (availableForFRepetition.length > 0) {
+                                numberToPlace = availableForFRepetition[Math.floor(Math.random() * availableForFRepetition.length)];
+                                isRepeated = true;
+                            }
                         }
 
                         if (numberToPlace !== null) {
@@ -905,13 +945,15 @@
                 }
 
                 // --- Pass 2: Assign remaining general unique selected numbers to unassigned days ---
-                currentDate = new Date(firstDayOfMonth); // Reset date for second pass
-                while (currentDate <= lastDayOfMonth && availableUniqueNumbersPool.length > 0) {
-                    const dayOfWeek = currentDate.getDay();
-                    const dateKey = getDateKey(currentDate);
+                availableUniqueNumbersPool = availableUniqueNumbersPool.filter(num => !usedUniqueNumbers.has(num));
+                
+                tempDate = new Date(firstDayOfMonth); // Reset date for second pass
+                while (tempDate <= lastDayOfMonth && availableUniqueNumbersPool.length > 0) {
+                    const dayOfWeek = tempDate.getDay();
+                    const dateKey = getDateKey(tempDate);
 
                     if (dayOfWeek === 1) { // Skip Mondays
-                        currentDate.setDate(currentDate.getDate() + 1);
+                        tempDate.setDate(tempDate.getDate() + 1);
                         continue;
                     }
 
@@ -919,37 +961,17 @@
                     if (!finalAssignments.has(dateKey)) {
                         const numberToPlace = availableUniqueNumbersPool.shift(); // Take next unique number
                         finalAssignments.set(dateKey, { number: numberToPlace, repeated: false, group: null });
-                        usedUniqueNumbers.add(numberToPlace);
+                        usedUniqueNumbers.add(numberToPlace); 
                     }
-                    currentDate.setDate(currentDate.getDate() + 1);
-                }
-
-                // --- Pass 3: Fill any remaining empty assignable days by repeating previously used numbers (excluding Group F's special repetition) ---
-                // This pool includes all initially selected numbers, for general repetition.
-                let generalRepetitionPool = shuffleArray(Array.from(selectedNumbersState));
-                let generalRepetitionPoolIndex = 0;
-
-                currentDate = new Date(firstDayOfMonth); // Reset date for third pass
-                while (currentDate <= lastDayOfMonth) {
-                    const dayOfWeek = currentDate.getDay();
-                    const dateKey = getDateKey(currentDate);
-
-                    if (dayOfWeek === 1) { // Skip Mondays
-                        currentDate.setDate(currentDate.getDate() + 1);
-                        continue;
-                    }
-
-                    // If this day still doesn't have a number
-                    if (!finalAssignments.has(dateKey)) {
-                        if (generalRepetitionPool.length > 0) {
-                            const numberToPlace = generalRepetitionPool[generalRepetitionPoolIndex];
-                            finalAssignments.set(dateKey, { number: numberToPlace, repeated: true, group: null });
-                            generalRepetitionPoolIndex = (generalRepetitionPoolIndex + 1) % generalRepetitionPool.length;
-                        }
-                    }
-                    currentDate.setDate(currentDate.getDate() + 1);
+                    tempDate.setDate(tempDate.getDate() + 1);
                 }
                 
+                // No need for a third pass to fill with general repeated numbers,
+                // as the requirement is now to auto-select enough unique numbers from groups.
+                // If a day still remains empty after Pass 1 and Pass 2 (which should only happen if
+                // there aren't enough total numbers across all groups to fill all non-Monday days),
+                // it will simply be left empty as per original "no importa si no aparece" for unassigned numbers.
+
                 renderSingleCalendar(calendarGrid, calendarHeader, selectedYear, selectedMonth, finalAssignments);
             }
 
